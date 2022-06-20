@@ -35,7 +35,7 @@ class Client(UserMixin):
         return self._phone_number
 
 
-class FoodPlace:
+class Agency:
     def __init__(self, place_id: int, name: str, address: str):
         self._id = place_id
         self._name = name
@@ -61,7 +61,7 @@ class FoodPlace:
         }
 
 
-class Product:
+class Service:
     def __init__(self, product_id: int, name: str, description, price: float):
         self._id = product_id
         self._name = name
@@ -94,13 +94,13 @@ class Product:
 
 
 class OrderItem:
-    def __init__(self, product: Product, amount: int):
-        self._product = product
+    def __init__(self, service: Service, amount: int):
+        self._service = service
         self._amount = amount
 
     @property
-    def product(self) -> Product:
-        return self._product
+    def service(self) -> Service:
+        return self._service
 
     @property
     def amount(self) -> int:
@@ -108,20 +108,19 @@ class OrderItem:
 
     def to_dict(self):
         return {
-            "product": self._product.name,
+            "service": self._service.name,
             "amount": self._amount,
-            "product_price": self._product.price
+            "service_price": self._service.price
         }
 
 
 class Order:
-    def __init__(self, order_id: int, created_time: int, is_delivered: bool, client_id: int, place: int,
+    def __init__(self, order_id: int, created_time: int, client_id: int, agency: int,
                  order_sum: float):
         self._id = order_id
         self._created_time = created_time
-        self._is_delivered = bool(is_delivered)
         self._client_id = client_id
-        self._place = place
+        self._agency = agency
         self._sum = order_sum
 
     @property
@@ -133,16 +132,12 @@ class Order:
         return self._created_time
 
     @property
-    def is_delivered(self) -> bool:
-        return self._is_delivered
-
-    @property
     def client_id(self) -> int:
         return self._client_id
 
     @property
-    def place(self) -> int:
-        return self._place
+    def agency(self) -> int:
+        return self._agency
 
     @property
     def sum(self) -> float:
@@ -152,7 +147,6 @@ class Order:
         return {
             'id': self._id,
             'created_time': self._created_time,
-            'is_delivered': self._is_delivered,
-            'place': self._place,
+            'agency': self._agency,
             'sum': self._sum
         }

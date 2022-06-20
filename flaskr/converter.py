@@ -35,7 +35,7 @@ class DbResponseToOrderConverter(AbstractConverter):
         return dto.Order(*kwargs['data'])
 
 
-class DbResponseToProductConverter(AbstractConverter):
+class DbResponseToServiceConverter(AbstractConverter):
     def convert(self, **kwargs):
         """
         kwargs:
@@ -45,7 +45,7 @@ class DbResponseToProductConverter(AbstractConverter):
         if 'data' not in kwargs:
             raise KeyError('"data" is not present in kwargs')
 
-        return dto.Product(*kwargs['data'])
+        return dto.Service(*kwargs['data'])
 
 
 class DbResponseToOrderItemConverter(AbstractConverter):
@@ -58,11 +58,11 @@ class DbResponseToOrderItemConverter(AbstractConverter):
         if 'data' not in kwargs:
             raise KeyError('"data" is not present in kwargs')
 
-        product = DbResponseToProductConverter().convert(data=kwargs['data'][1:])
+        product = DbResponseToServiceConverter().convert(data=kwargs['data'][1:])
         return dto.OrderItem(product, kwargs['data'][0])
 
 
-class DbResponseToFoodPlaceConverter(AbstractConverter):
+class DbResponseToAgencyConverter(AbstractConverter):
     def convert(self, **kwargs):
         """
         kwargs:
@@ -72,4 +72,4 @@ class DbResponseToFoodPlaceConverter(AbstractConverter):
         if 'data' not in kwargs:
             raise KeyError('"data" is not present in kwargs')
 
-        return dto.FoodPlace(*kwargs['data'])
+        return dto.Agency(*kwargs['data'])

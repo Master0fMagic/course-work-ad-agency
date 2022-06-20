@@ -4,7 +4,7 @@ from flask_cors import CORS
 from setup import init_app
 from clientService import ClientService
 from orderService import OrderService
-from foodService import FoodService
+from agencyService import AgencyService
 from flask_login import login_user, logout_user, login_required, current_user
 import error
 import dto
@@ -14,7 +14,7 @@ cors = CORS(app, resources={r"*": {"origins": "*", "supports_credentials": "true
 init_app(app)
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/api/login', methods=['POST'])
 def login():
     """
     takes json: {
@@ -41,7 +41,7 @@ def login():
     return jsonify(success=True)
 
 
-@app.route('/logout')
+@app.route('/api/logout')
 @login_required
 def logout():
     """
@@ -52,7 +52,7 @@ def logout():
     return jsonify(success=True)
 
 
-@app.route('/sing-up', methods=['POST'])
+@app.route('/api/sing-up', methods=['POST'])
 def sing_up():
     """
        takes json: {
@@ -88,11 +88,11 @@ def sing_up():
     return jsonify(success=True)
 
 
-@app.route('/order/places')
+@app.route('/api/order/agency')
 @login_required
-def get_places():
+def get_agency_list():
     """
-        returns list of places to order food
+        returns list of agencies to order advertising
        :return:  json: {
         "places": [
             {
@@ -103,18 +103,18 @@ def get_places():
         ]
        }
     """
-    fs = FoodService()
+    fs = AgencyService()
     return {
-        'places': [place.to_dict() for place in fs.get_food_place_list()]
+        'places': [place.to_dict() for place in fs.get_agency_list()]
     }
 
 
-@app.route('/order/menu/<int:food_place_id>')
+@app.route('/api/order/service/<int:agency_id>')
 @login_required
-def get_menu_by_place(food_place_id: int):
+def get_service_by_place(agency_id: int):
     """
    :return:  json: {
-    "menu": [
+    "data": [
         {
             "description": "",
             "id": 1,
@@ -125,21 +125,21 @@ def get_menu_by_place(food_place_id: int):
    }
     """
 
-    fs = FoodService()
+    fs = AgencyService()
     return {
-        'menu': [menu.to_dict() for menu in fs.get_product_list_by_food_place(food_place_id)]
+        'data': [menu.to_dict() for menu in fs.get_product_list_by_agency(agency_id)]
     }
 
 
-@app.route('/order/create', methods=['POST'])
+@app.route('/api/order/create', methods=['POST'])
 @login_required
 def create_order():
     """
        takes json: {
-       "place_id":<id of food place>,
+       "agency_id":<id of food place>,
        "items": [
             {
-            "food_id": <id of menu item>,
+            "service_id": <id of service item>,
             "count": <count>
             }
        ]
@@ -148,18 +148,21 @@ def create_order():
 
     os = OrderService()
     order_items = [
-        dto.OrderItem(dto.Product(product_id=item['food_id'], name='', description='', price=0), amount=item['count'])
+        dto.OrderItem(dto.Service(product_id=item['service_id'], name='', description='', price=0), amount=item['count'])
         for item in request.json['items']]
 
     if not order_items:
         abort(400, 'Empty order received')
 
-    food_place = request.json['place_id']
-    os.create_new_order(current_user.id, food_place, order_items)
+    agency = request.json['agency_id']
+    if not agency:
+        abort(400, 'agency is required')
+
+    os.create_new_order(current_user.id, agency, order_items)
     return jsonify(success=True)
 
 
-@app.route('/order/history')
+@app.route('/api/order/history')
 @login_required
 def get_order_history():
     """
@@ -168,8 +171,7 @@ def get_order_history():
         {
             "created_time": 1655148281,
             "id": 6,
-            "is_delivered": false,
-            "place": "",
+            "agency": "",
             "sum": 827.0
         }
     ]
@@ -181,7 +183,7 @@ def get_order_history():
     }
 
 
-@app.route('/order/history/<int:order_id>')
+@app.route('/api/order/history/<int:order_id>')
 @login_required
 def get_order_details(order_id: int):
     """
@@ -191,8 +193,8 @@ def get_order_details(order_id: int):
     "items":[
        {
         "amount": 2,
-        "product": "",
-        "product_price": 125.0
+        "service": "",
+        "service_price": 125.0
         }
     ]
     }
@@ -202,12 +204,5 @@ def get_order_details(order_id: int):
         'details': [item.to_dict() for item in os.get_full_order(order_id)]
     }
 
-
-@app.route('/order/complete/<int:order_id>', methods=['POST'])
-@login_required
-def complete_order(order_id: int):
-    os = OrderService()
-    os.complete(order_id)
-    return jsonify(success=True)
 
 app.run()

@@ -8,7 +8,7 @@ import time
 
 class SqliteDatabaseProvider:
     def execute_select(self, query: str):
-        connection = sqlite3.connect('./food-delivery.db')
+        connection = sqlite3.connect('./data.db')
         cursor = connection.cursor()
         cursor.execute(query)
         records = cursor.fetchall()
@@ -17,7 +17,7 @@ class SqliteDatabaseProvider:
         return records
 
     def execute_update(self, query):
-        connection = sqlite3.connect('./food-delivery.db')
+        connection = sqlite3.connect('./data.db')
         cursor = connection.cursor()
         cursor.execute(query)
         res = cursor.fetchall()
@@ -62,29 +62,25 @@ class AbstractOrderProvider(ABC):
     def create_order(self, client_id: int, food_place_id: int, items: list[dto.OrderItem]):
         pass
 
-    @abstractmethod
-    def complete_order(self, order_id):
-        pass
 
-
-class AbstractFoodProvider(ABC):
+class AbstractAgencyProvider(ABC):
     @abstractmethod
-    def get_food_place_list(self) -> list[dto.FoodPlace]:
+    def get_agency_list(self) -> list[dto.Agency]:
         pass
 
     @abstractmethod
-    def get_product_by_food_place(self, place_id: int) -> list[dto.Product]:
+    def get_product_by_agency(self, place_id: int) -> list[dto.Service]:
         pass
 
 
-class SqliteDataProvider(AbstractClientProvider, AbstractOrderProvider, AbstractFoodProvider):
+class SqliteDataProvider(AbstractClientProvider, AbstractOrderProvider, AbstractAgencyProvider):
     _provider = None
 
     def __init__(self):
         self._db = SqliteDatabaseProvider()
 
     @classmethod
-    def get_provider(cls) -> AbstractClientProvider:
+    def get_provider(cls):
         if not cls._provider:
             cls._provider = SqliteDataProvider()
         return cls._provider
@@ -145,9 +141,9 @@ WHERE o.orderid = '{order_id}'
 
     def get_short_order_info_by_client(self, client_id: int) -> list[dto.Order]:
         sql = f'''
-SELECT o.id, o.createdtime , o.isdelivered , o.clientid , f.name || ', ' || f.address, sum(o2.amount * p.price)
+SELECT o.id, o.createdtime , o.clientid , a.name, sum(o2.amount * p.price)
 from "order" o 
-join foodplace f on f.id = o.placeid 
+join agency a on a.id = o.agencyid 
 join orderitem o2 on o2.orderid = o.id 
 join product p on o2.productid = p.id 
 where o.clientid  = '{client_id}'
@@ -155,37 +151,29 @@ GROUP BY o.id;
 '''
         return [converter.DbResponseToOrderConverter().convert(data=item) for item in self._db.execute_select(sql)]
 
-    def create_order(self, client_id: int, food_place_id: int, items: list[dto.OrderItem]) -> None:
+    def create_order(self, client_id: int, agency_id: int, items: list[dto.OrderItem]) -> None:
         sql = f'''
-INSERT INTO "order" (createdtime, isdelivered, clientid, placeid) VALUES
-({int(time.time())},{False} ,{client_id} ,{food_place_id} ) returning id
+INSERT INTO "order" (createdtime, clientid, agencyid) VALUES
+({int(time.time())} ,{client_id} ,{agency_id} ) returning id
 '''
         order_id = int(self._db.execute_update(sql)[0][0])
         sql = f'''
 INSERT INTO orderitem (orderid, productid, amount) VALUES
-{', '.join([f'({order_id},{item.product.id},{item.amount})' for item in items])};
+{', '.join([f'({order_id},{item.service.id},{item.amount})' for item in items])};
 '''
         logging.info(f'request: {sql}')
         self._db.execute_update(sql)
 
-    def complete_order(self, order_id):
-        sql = f'''
-UPDATE "order" 
-set isdelivered = TRUE 
-where id ='{order_id}'
-'''
-        self._db.execute_update(sql)
-
-    def get_food_place_list(self) -> list[dto.FoodPlace]:
+    def get_agency_list(self) -> list[dto.Agency]:
         sql = '''
        SELECT *
-from foodplace f '''
-        return [converter.DbResponseToFoodPlaceConverter().convert(data=item) for item in self._db.execute_select(sql)]
+from agency f '''
+        return [converter.DbResponseToAgencyConverter().convert(data=item) for item in self._db.execute_select(sql)]
 
-    def get_product_by_food_place(self, place_id: int) -> list[dto.Product]:
+    def get_product_by_agency(self, agency_id: int) -> list[dto.Service]:
         sql = f'''
 SELECT p.id, p.name, p.description , p.price 
 FROM product p
-WHERE p.placeid = {place_id}
+WHERE p.agencyid = {agency_id}
 '''
-        return [converter.DbResponseToProductConverter().convert(data=item) for item in self._db.execute_select(sql)]
+        return [converter.DbResponseToServiceConverter().convert(data=item) for item in self._db.execute_select(sql)]
