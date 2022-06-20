@@ -69,7 +69,7 @@ class AbstractAgencyProvider(ABC):
         pass
 
     @abstractmethod
-    def get_product_by_agency(self, place_id: int) -> list[dto.Service]:
+    def get_service_by_agency(self, place_id: int) -> list[dto.Service]:
         pass
 
 
@@ -170,7 +170,7 @@ INSERT INTO orderitem (orderid, productid, amount) VALUES
 from agency f '''
         return [converter.DbResponseToAgencyConverter().convert(data=item) for item in self._db.execute_select(sql)]
 
-    def get_product_by_agency(self, agency_id: int) -> list[dto.Service]:
+    def get_service_by_agency(self, agency_id: int) -> list[dto.Service]:
         sql = f'''
 SELECT p.id, p.name, p.description , p.price 
 FROM product p

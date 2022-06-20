@@ -23,4 +23,4 @@ class AgencyService(AbstractAgencyService):
         return self._provider.get_agency_list()
 
     def get_product_list_by_agency(self, agency_id: int) -> list[dto.Service]:
-        return self._provider.get_product_by_agency(agency_id)
+        return self._provider.get_service_by_agency(agency_id)
