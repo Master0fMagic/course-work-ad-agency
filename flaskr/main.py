@@ -89,7 +89,6 @@ def sing_up():
 
 
 @app.route('/api/order/agency')
-@login_required
 def get_agency_list():
     """
         returns list of agencies to order advertising
@@ -110,7 +109,6 @@ def get_agency_list():
 
 
 @app.route('/api/order/service/<int:agency_id>')
-@login_required
 def get_service_by_place(agency_id: int):
     """
    :return:  json: {
