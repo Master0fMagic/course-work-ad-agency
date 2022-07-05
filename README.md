@@ -8,7 +8,7 @@ HOW TO RUN
 
 To start back-end:
 ```bash for windows
-flask install -r reqiurements.txt
+pip install -r reqiurements.txt
 $env:FLASK_APP="flaskr/main"
 flask run
 ```
@@ -16,6 +16,7 @@ flask run
 
 To start front-end:
 ```bash for windows
+cd ui
 npm i
 npm start
 ```
